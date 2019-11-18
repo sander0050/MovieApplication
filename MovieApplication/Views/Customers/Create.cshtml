@@ -1,6 +1,6 @@
 ﻿@model MovieApplication.Models.Customer
 
-@using (Html.BeginForm()) 
+@using (Html.BeginForm("Save", "Customers")) 
 {
     @Html.AntiForgeryToken()
     
@@ -32,14 +32,15 @@
             </div>
         </div>
 
+        @Html.HiddenFor(m => m.Id)
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
+                <input type="submit" class="btn btn-success" />
             </div>
         </div>
     </div>
 }
 
 <div>
-    @Html.ActionLink("Back to List", "Index")
+    @Html.ActionLink("Back", "Index", "Customers", null, new { @class = "btn btn-primary" })
 </div>

@@ -1,45 +1,104 @@
 ﻿using MovieApplication.Models;
-using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
+using MovieApplication.ViewModels;
 
-namespace MovieApplication.Controllers
+namespace WebAppMovie.Controllers
 {
     public class MoviesController : Controller
     {
-        // GET: Movies
-        public ActionResult Index()
+        private readonly ApplicationDbContext _context;
+
+        public MoviesController()
         {
-            return View(GetMovies());
+            _context = new ApplicationDbContext();
         }
 
-        public ActionResult Create()
+        protected override void Dispose(bool disposing)
         {
-            return View();
+            _context.Dispose();
         }
+
+        public ViewResult Index()
+        {
+            // if (User.IsInRole(RoleName.CanManageMovies))
+            return View(GetMovies());
+
+            // return View("ReadOnlyList");
+        }
+
+        //[Authorize(Roles = RoleName.CanManageMovies)]
+        public ViewResult New()
+        {
+            var genres = _context.Genres.ToList();
+
+            var viewModel = new MovieFormViewModel
+            {
+                Movie = new Movie(),
+                Genres = genres
+            };
+
+            return View("MovieForm", viewModel);
+        }
+
+        // [Authorize(Roles = RoleName.CanManageMovies)]
+        public ActionResult Edit(int id)
+        {
+            var movie = _context.Movies.SingleOrDefault(c => c.Id == id);
+
+            if (movie == null)
+                return HttpNotFound();
+
+            var viewModel = new MovieFormViewModel(movie)
+            {
+                Genres = _context.Genres.ToList()
+            };
+
+            return View("MovieForm", viewModel);
+        }
+
 
         public ActionResult Details(int id)
         {
-            return View(GetMovies().Find(c => c.Id == id));
+            var movie = _context.Movies.Include(m => m.Genre).SingleOrDefault(m => m.Id == id);
+
+            if (movie == null)
+                return HttpNotFound();
+
+            return View(movie);
+
         }
 
-        public ActionResult Edit(int id)
+        [HttpPost]
+        public ActionResult Save(MovieFormViewModel MovieForm)
         {
-            return View(GetMovies().Find(c => c.Id == id));
-        }
-
-        private List<Movie> GetMovies()
-        {
-            return new List<Movie>()
+            if (!ModelState.IsValid)
             {
-                new Movie(){Id=1,Name="Joker",Description="this is the description for Joker"},
-                new Movie(){Id=2,Name="Avengers",Description="this is the description for Avengers"},
-                new Movie(){Id=3,Name="John Wick",Description="this is the description for John Wick"},
-                new Movie(){Id=4,Name="Malefica",Description="this is the description for Malefica"},
-                new Movie(){Id=5,Name="Fast and Furious",Description="this is the description for Fast and Furious"},
-            };
+                return View("MovieForm", MovieForm);
+            }
+
+            if (MovieForm.Movie.Id == 0)
+            {
+                _context.Movies.Add(MovieForm.Movie);
+            }
+            else
+            {
+                var movieInDb = _context.Movies.Single(m => m.Id == MovieForm.Movie.Id);
+                movieInDb.Name = MovieForm.Movie.Name;
+                movieInDb.Description = MovieForm.Movie.Description;
+                movieInDb.GenreId = MovieForm.Movie.GenreId;
+            }
+
+            _context.SaveChanges();
+
+            return RedirectToAction("Index", "Movies");
+        }
+
+        private IEnumerable<Movie> GetMovies()
+        {
+            return _context.Movies.Include(m => m.Genre).ToList();
         }
     }
 }

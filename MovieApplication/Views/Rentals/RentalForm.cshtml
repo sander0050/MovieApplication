@@ -1,0 +1,25 @@
+﻿@model MovieApplication.ViewModels.RentalFormViewModel
+
+@using (Html.BeginForm("Create", "Rentals"))
+{
+
+    @Html.ValidationSummary(true, "Please fix the following errors.")
+    <div class="form-group">
+        @Html.Label("Customer")
+        @Html.DropDownListFor(m => m.Rental.IdCustomer, new SelectList(Model.Customers, "Id", "Nombre"), "", new { @class = "form-control" })
+        @Html.ValidationMessageFor(m =>m.Rental.IdCustomer)
+    </div>
+    <div class="form-group">
+        @Html.Label("Movie")
+        @Html.DropDownListFor(m => m.Rental.IdMovie, new SelectList(Model.Movies, "Id", "Name"), "", new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Rental.IdMovie)
+    </div>
+
+    @Html.HiddenFor(m => m.Rental.Id)
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-primary">Save</button>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
